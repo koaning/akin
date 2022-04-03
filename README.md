@@ -2,7 +2,7 @@
 
 # akin
 
-> Get's your text sorted.
+> Some text similarity utilities
 
 The goal of **akin** is to make it easy to sort text based on numeric similarity.
 
