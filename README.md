@@ -1,4 +1,4 @@
-<img src="icepickle.png" width=175 align="right">
+<img src="akin.png" width=175 align="right">
 
 # akin
 
