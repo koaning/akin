@@ -10,7 +10,7 @@ from sklearn.feature_extraction.text import CountVectorizer
 
 class AkinClassifier:
     """
-    Zero shot classifier for text data that uses a few examples to guess a class. 
+    Zero shot classifier for text data that uses a few examples to guess a class.
 
     Arguments:
     - `examples`: dictionary of text examples, per label, to compare against
@@ -21,11 +21,11 @@ class AkinClassifier:
     Usage:
 
     ```python
-    import pandas as pd 
+    import pandas as pd
     from akin import AkinClassifier
 
     examples = {
-        "positive": ["thanks so much", "compliment", "i like this!"], 
+        "positive": ["thanks so much", "compliment", "i like this!"],
         "negative": ["this stinks", "you suck"],
     }
     akin = AkinClassifier(examples=examples)
@@ -42,19 +42,21 @@ class AkinClassifier:
     next(g)
     ```
     """
+
     def __init__(self, examples, featurizer=None, metric="euclidean", reducer="min"):
         self.featurizer = featurizer
         self.metric = metric
         if not featurizer:
             self.featurizer = make_union(
-                CountVectorizer(), 
-                CountVectorizer(analyzer="char", ngram_range=(2, 3))
+                CountVectorizer(), CountVectorizer(analyzer="char", ngram_range=(2, 3))
             )
-        texts = reduce(lambda x,y: concat(x, y), examples.values())
+        texts = reduce(lambda x, y: concat(x, y), examples.values())
         self.featurizer.fit(texts)
         self.examples = examples
         self.reducer = reducer
-        self.examples_tfm = {k: self.featurizer.transform(v) for k, v in examples.items()}
+        self.examples_tfm = {
+            k: self.featurizer.transform(v) for k, v in examples.items()
+        }
 
     def predict_single(self, text):
         """
@@ -66,11 +68,11 @@ class AkinClassifier:
         Usage:
 
         ```python
-        import pandas as pd 
+        import pandas as pd
         from akin import AkinClassifier
 
         examples = {
-            "positive": ["thanks so much", "compliment", "i like this!"], 
+            "positive": ["thanks so much", "compliment", "i like this!"],
             "negative": ["this stinks", "you suck"],
         }
         akin = AkinClassifier(examples=examples)
@@ -82,8 +84,13 @@ class AkinClassifier:
         """
         X_tfm = self.featurizer.transform([text])
         reducer_func = np.mean if self.reducer == "mean" else np.min
-        return {k: reducer_func(pairwise_distances(X_tfm, self.examples_tfm[k], metric=self.metric)) for k in self.examples}
-    
+        return {
+            k: reducer_func(
+                pairwise_distances(X_tfm, self.examples_tfm[k], metric=self.metric)
+            )
+            for k in self.examples
+        }
+
     def pipe(self, stream):
         """
         Predict a single text item.
@@ -94,11 +101,11 @@ class AkinClassifier:
         Usage:
 
         ```python
-        import pandas as pd 
+        import pandas as pd
         from akin import AkinClassifier
 
         examples = {
-            "positive": ["thanks so much", "compliment", "i like this!"], 
+            "positive": ["thanks so much", "compliment", "i like this!"],
             "negative": ["this stinks", "you suck"],
         }
         akin = AkinClassifier(examples=examples)
@@ -111,7 +118,7 @@ class AkinClassifier:
         """
         for item in stream:
             yield {"text": item, "distances": {**self.predict_single(item)}}
-    
+
     def assign_distances(self, dataf, text_col="text"):
         """
         Predict a single text item.
@@ -123,11 +130,11 @@ class AkinClassifier:
         Usage:
 
         ```python
-        import pandas as pd 
+        import pandas as pd
         from akin import AkinClassifier
 
         examples = {
-            "positive": ["thanks so much", "compliment", "i like this!"], 
+            "positive": ["thanks so much", "compliment", "i like this!"],
             "negative": ["this stinks", "you suck"],
         }
         akin = AkinClassifier(examples=examples)
@@ -137,11 +144,19 @@ class AkinClassifier:
         akin.assign_distances(df)
         ```
         """
-        distances = [_['distances'] for _ in self.pipe(dataf[text_col])]
+        distances = [_["distances"] for _ in self.pipe(dataf[text_col])]
         return pd.concat([dataf, pd.DataFrame(distances)], axis=1)
 
 
-def sort_dataframe(dataf, examples, featurizer=None, text_col="text", dist_col="dist", metric="euclidean", reducer="min"):
+def sort_dataframe(
+    dataf,
+    examples,
+    featurizer=None,
+    text_col="text",
+    dist_col="dist",
+    metric="euclidean",
+    reducer="min",
+):
     """
     Sorts a dataframe based on the feature distances to the examples.
 
@@ -155,11 +170,11 @@ def sort_dataframe(dataf, examples, featurizer=None, text_col="text", dist_col="
     - `reducer`: the method to use to reduce the distances of all examples to single text, default is "min"
 
     More information on the distance metrics can be found [here](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.pairwise_distances.html).
-    
-    Note that this function can also be used in a pandas pipeline. 
+
+    Note that this function can also be used in a pandas pipeline.
 
     ```python
-    from akin import sort_dataframe 
+    from akin import sort_dataframe
 
     dataf = pd.read_csv("data.csv")
     dataf.pipe(sort_dataframe, examples=["very nice", "super positive"])
@@ -167,8 +182,7 @@ def sort_dataframe(dataf, examples, featurizer=None, text_col="text", dist_col="
     """
     if not featurizer:
         featurizer = make_union(
-            CountVectorizer(), 
-            CountVectorizer(analyzer="char", ngram_range=(2, 3))
+            CountVectorizer(), CountVectorizer(analyzer="char", ngram_range=(2, 3))
         )
     X_tfm = featurizer.fit_transform(examples)
     X_other = featurizer.transform(list(dataf[text_col]))
