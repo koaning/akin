@@ -7,7 +7,7 @@ flake:
 test:
 	pytest tests
 
-check: black flake test interrogate
+check: black flake test
 
 install:
 	python -m pip install -e ".[dev]"
