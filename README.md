@@ -67,7 +67,7 @@ akin.assign_distances(df)
 akin.predict_single(text="thanks, that's nice of you")
 
 # Construct a generator that yields the {text, distances} dictionary for each item
-g = akin.pipe(text=df["text"])
+g = akin.pipe(df["text"])
 next(g)
 ```
 
